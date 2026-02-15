@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include "quiet-portaudio.h"
+#include "profiles_path.h"
 
 int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
     PaError err = Pa_Initialize();
@@ -52,11 +53,12 @@ int main(int argc, char **argv) {
         printf("usage: encode_soundcard <profilename> [<input_source>]\n");
         exit(1);
     }
+    const char *profiles_path = get_profiles_path();
     quiet_encoder_options *encodeopt =
-        quiet_encoder_profile_filename(QUIET_PROFILES_LOCATION, argv[1]);
+        quiet_encoder_profile_filename(profiles_path, argv[1]);
 
     if (!encodeopt) {
-        printf("failed to read profile %s from %s\n", argv[1], QUIET_PROFILES_LOCATION);
+        printf("failed to read profile %s from %s\n", argv[1], profiles_path);
         exit(1);
     }
 

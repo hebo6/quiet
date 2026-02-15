@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "quiet.h"
+#include "profiles_path.h"
 
 #include <sndfile.h>
 
@@ -103,11 +104,12 @@ int main(int argc, char **argv) {
         }
     }
 
+    const char *profiles_path = get_profiles_path();
     quiet_encoder_options *encodeopt =
-        quiet_encoder_profile_filename(QUIET_PROFILES_LOCATION, argv[1]);
+        quiet_encoder_profile_filename(profiles_path, argv[1]);
 
     if (!encodeopt) {
-        printf("failed to read profile %s from %s\n", argv[1], QUIET_PROFILES_LOCATION);
+        printf("failed to read profile %s from %s\n", argv[1], profiles_path);
         exit(1);
     }
 
