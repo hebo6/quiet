@@ -59,13 +59,12 @@ mark_as_advanced(liquid_include liquid_library)
 if(LIQUID_FOUND)
     add_library(liquid UNKNOWN IMPORTED)
     set_target_properties(liquid PROPERTIES IMPORTED_LOCATION "${liquid_library}" INTERFACE_INCLUDE_DIRECTORIES "${liquid_include}")
-    check_library_exists(liquid flexframesync_set_header_len,flexframegen_set_header_len,ofdmflexframesync_set_header_len,ofdmflexframegen_set_header_len,resamp_rrrf_execute_output_block,liquid_pack_array_block "" LIQUID_DEVEL_FUNCTIONS)
-    if(NOT LIQUID_DEVEL_FUNCTIONS)
+    check_library_exists(liquid flexframesync_set_header_len,flexframegen_set_header_len,ofdmflexframesync_set_header_len,ofdmflexframegen_set_header_len "" LIQUID_REQUIRED_FUNCTIONS)
+    if(NOT LIQUID_REQUIRED_FUNCTIONS)
       unset(LIQUID_FOUND CACHE)
         message(FATAL_ERROR "
-libquiet requires the devel branch of libliquid but
-  found a different branch installed
-fetch the devel branch using
+libquiet requires libliquid >= 1.6.0 with frame header support
+install libliquid-dev or fetch from
     git clone https://github.com/quiet/liquid-dsp.git -b devel --single-branch
 and install it before continuing")
     endif()
