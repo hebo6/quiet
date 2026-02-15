@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libliquid-dev libfec-dev libjansson-dev libsndfile1-dev portaudio19-dev
+
+      - name: Build artifacts
+        run: |
+          cmake -S . -B build
+          cmake --build build
+
+      - name: Bundle shared libraries
+        run: |
+          cd build/bin
+          cp ../lib/libquiet.* .
+          # Collect shared libraries from binaries and their transitive deps
+          while true; do
+            new_found=0
+            for file in *; do
+              [ -f "$file" ] || continue
+              for lib in $(ldd "$file" 2>/dev/null | grep -E 'libliquid|libjansson|libcorrect|libfec|libportaudio' | awk '{print $3}'); do
+                if [ -f "$lib" ] && [ ! -f "$(basename "$lib")" ]; then
+                  cp "$lib" .
+                  new_found=1
+                fi
+              done
+            done
+            [ "$new_found" -eq 0 ] && break
+          done
+          # Set RPATH on all binaries and shared libraries
+          for file in *; do
+            [ -f "$file" ] || continue
+            patchelf --set-rpath '$ORIGIN' "$file" 2>/dev/null || true
+          done
+          cp ../../quiet-profiles.json .
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: quiet-linux-x86_64
+          path: build/bin/
