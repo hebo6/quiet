@@ -2,6 +2,7 @@
 #include <signal.h>
 
 #include "quiet-portaudio.h"
+#include "profiles_path.h"
 
 static quiet_portaudio_decoder *decoder = NULL;
 static void sig_handler(int signal) {
@@ -47,11 +48,12 @@ int main(int argc, char **argv) {
         printf("usage: encode_soundcard <profilename> [<output_destination>]\n");
         exit(1);
     }
+    const char *profiles_path = get_profiles_path();
     quiet_decoder_options *decodeopt =
-        quiet_decoder_profile_filename(QUIET_PROFILES_LOCATION, argv[1]);
+        quiet_decoder_profile_filename(profiles_path, argv[1]);
 
     if (!decodeopt) {
-        printf("failed to read profile %s from %s\n", argv[1], QUIET_PROFILES_LOCATION);
+        printf("failed to read profile %s from %s\n", argv[1], profiles_path);
         exit(1);
     }
 

@@ -3,6 +3,7 @@
 #define DEBUG_FLEXFRAMESYNC 1
 #endif
 #include "quiet.h"
+#include "profiles_path.h"
 #include <math.h>
 #include <string.h>
 #include <sndfile.h>
@@ -98,11 +99,12 @@ int main(int argc, char **argv) {
         }
     }
 
+    const char *profiles_path = get_profiles_path();
     quiet_decoder_options *decodeopt =
-        quiet_decoder_profile_filename(QUIET_PROFILES_LOCATION, argv[1]);
+        quiet_decoder_profile_filename(profiles_path, argv[1]);
 
     if (!decodeopt) {
-        printf("failed to read profile %s from %s\n", argv[1], QUIET_PROFILES_LOCATION);
+        printf("failed to read profile %s from %s\n", argv[1], profiles_path);
         exit(1);
     }
 
