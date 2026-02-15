@@ -453,6 +453,34 @@ ssize_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len
             symbols_wanted++;
         }
         size_t symbols_written = encoder_fillsymbols(e, symbols_wanted);
+
+        if (symbols_written == 0) {
+            // frame generator produced no symbols -- frame is complete
+            // (gmskframegen_is_assembled may still return true after frame is done)
+            bool do_close_frame = e->is_close_frame && written > 0;
+            bool have_another_frame = encoder_read_next_frame(e);
+
+            if (do_close_frame || !have_another_frame) {
+                if (e->has_flushed) {
+                    break;
+                }
+                e->samplebuf_len = modulator_flush(e->mod, e->samplebuf);
+                if (e->resampler) {
+                    for (size_t i = 0; i < e->opt.resampler.delay; i++) {
+                        e->samplebuf[i + e->samplebuf_len] = 0;
+                    }
+                    e->samplebuf_len += e->opt.resampler.delay;
+                }
+                modulator_reset(e->mod);
+                e->has_flushed = true;
+                if (do_close_frame && have_another_frame) {
+                    frame_closed = true;
+                }
+                continue;
+            }
+            continue;
+        }
+
         size_t sample_buffer_needed = modulator_sample_len(e->mod, symbols_written);
 
         if (sample_buffer_needed > e->samplebuf_cap) {

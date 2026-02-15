@@ -66,13 +66,15 @@ int encode_to_wav(FILE *payload, const char *out_fname,
             frame_len = (frame_len > (nread - i)) ? (nread - i) : frame_len;
             quiet_encoder_send(e, readbuf + i, frame_len);
         }
+    }
 
-        ssize_t written = samplebuf_len;
-        while (written == samplebuf_len) {
-            written = quiet_encoder_emit(e, samplebuf, samplebuf_len);
-            if (written > 0) {
-                wav_write(wav, samplebuf, written);
-            }
+    quiet_encoder_close(e);
+
+    ssize_t written = samplebuf_len;
+    while (written == samplebuf_len) {
+        written = quiet_encoder_emit(e, samplebuf, samplebuf_len);
+        if (written > 0) {
+            wav_write(wav, samplebuf, written);
         }
     }
 
