@@ -1,7 +1,7 @@
 {
     "audible": {
         "checksum_scheme": "crc32",
-        "inner_fec_scheme": "v27",
+        "inner_fec_scheme": "g2412",
         "outer_fec_scheme": "none",
         "mod_scheme": "gmsk",
         "frame_length": 25,
@@ -28,8 +28,8 @@
     "audible-7k-channel-0": {
       "mod_scheme": "arb16opt",
       "checksum_scheme": "crc32",
-      "inner_fec_scheme": "v29",
-      "outer_fec_scheme": "rs8",
+      "inner_fec_scheme": "g2412",
+      "outer_fec_scheme": "g2412",
       "frame_length": 600,
       "modulation": {
         "center_frequency": 9200,
@@ -61,8 +61,8 @@
     "audible-7k-channel-1": {
       "mod_scheme": "arb16opt",
       "checksum_scheme": "crc32",
-      "inner_fec_scheme": "v29",
-      "outer_fec_scheme": "rs8",
+      "inner_fec_scheme": "g2412",
+      "outer_fec_scheme": "g2412",
       "frame_length": 600,
       "modulation": {
         "center_frequency": 15500,
@@ -94,8 +94,8 @@
     "cable-64k": {
       "mod_scheme": "qam1024",
       "checksum_scheme": "crc32",
-      "inner_fec_scheme": "v27p23",
-      "outer_fec_scheme": "rs8",
+      "inner_fec_scheme": "g2412",
+      "outer_fec_scheme": "g2412",
       "frame_length": 7500,
       "modulation": {
         "center_frequency": 10200,
@@ -127,7 +127,7 @@
     "hello-world": {
       "mod_scheme": "gmsk",
       "checksum_scheme": "crc32",
-      "inner_fec_scheme": "v27",
+      "inner_fec_scheme": "g2412",
       "outer_fec_scheme": "none",
       "frame_length": 25,
       "modulation": {
@@ -153,7 +153,7 @@
     "ultrasonic": {
       "mod_scheme": "gmsk",
       "checksum_scheme": "crc32",
-      "inner_fec_scheme": "v27",
+      "inner_fec_scheme": "g2412",
       "outer_fec_scheme": "none",
       "frame_length": 34,
       "modulation": {
@@ -186,7 +186,7 @@
       },
       "mod_scheme": "V29",
       "checksum_scheme": "crc8",
-      "inner_fec_scheme": "v27",
+      "inner_fec_scheme": "g2412",
       "outer_fec_scheme": "none",
       "frame_length": 550,
       "modulation": {
@@ -212,7 +212,7 @@
     "ultrasonic-whisper": {
       "mod_scheme": "gmsk",
       "checksum_scheme": "crc32",
-      "inner_fec_scheme": "v27",
+      "inner_fec_scheme": "g2412",
       "outer_fec_scheme": "none",
       "frame_length": 16,
       "modulation": {
