@@ -27,7 +27,7 @@ jobs:
 
       - name: Bundle shared libraries
         run: |
-          LIB_PATTERN='libliquid|libjansson|libcorrect|libfec|libportaudio'
+          LIB_PATTERN='libliquid|libfec'
 
           bundle_deps() {
             local dir="$1"
