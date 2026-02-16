@@ -1,26 +1,5 @@
 #include "quiet/portaudio_encoder.h"
 
-static int encoder_callback(const void *input_buffer, void *output_buffer_v,
-                            unsigned long frame_count, const PaStreamCallbackTimeInfo *time_info,
-                            PaStreamCallbackFlags status_flags, void *encoder_v) {
-
-    portaudio_encoder *enc = (portaudio_encoder *)encoder_v;
-    quiet_sample_t *output_buffer = (quiet_sample_t *)output_buffer_v;
-    memset(output_buffer, 0, frame_count * enc->num_channels * sizeof(quiet_sample_t));
-    memset(enc->mono_buffer, 0, frame_count * sizeof(quiet_sample_t));
-    ssize_t written = quiet_encoder_emit(enc->enc, enc->mono_buffer, frame_count);
-    if (written == 0) {
-        return paComplete;
-    }
-    if (written < 0) {
-        return 0;
-    }
-    for (size_t i = 0; i < written; i++) {
-        output_buffer[enc->num_channels * i] = enc->mono_buffer[i];
-    }
-    return 0;
-}
-
 portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *opt, PaDeviceIndex device, PaTime latency, double sample_rate, size_t sample_buffer_size) {
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
     size_t num_channels = 2 < deviceInfo->maxOutputChannels ? 2 : deviceInfo->maxOutputChannels;
@@ -36,7 +15,7 @@ portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *o
     PaStream *stream;
     portaudio_encoder *enc = malloc(1 * sizeof(portaudio_encoder));
     err = Pa_OpenStream(&stream, NULL, &param, sample_rate,
-                        sample_buffer_size, paNoFlag, encoder_callback, enc);
+                        sample_buffer_size, paNoFlag, NULL, NULL);
     if (err != paNoError) {
         printf("failed to open port audio stream, %s\n", Pa_GetErrorText(err));
         return NULL;
@@ -117,9 +96,6 @@ void quiet_portaudio_encoder_emit_empty(portaudio_encoder *enc) {
 
 void quiet_portaudio_encoder_close(portaudio_encoder *enc) {
     quiet_encoder_close(enc->enc);
-    while (Pa_IsStreamActive(enc->stream)) {
-        usleep(100);
-    }
 }
 
 void quiet_portaudio_encoder_destroy(portaudio_encoder *enc) {
