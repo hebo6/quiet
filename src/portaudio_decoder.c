@@ -1,5 +1,5 @@
 #include "quiet/portaudio_decoder.h"
-#include <unistd.h>
+#include <time.h>
 
 static void decoder_dealloc(portaudio_decoder *dec) {
     if (!dec) {
@@ -94,7 +94,8 @@ static void *consume(void *dec_void) {
     free(pcm);
 
     while (Pa_IsStreamActive(dec->stream)) {
-        usleep(100);
+        struct timespec ts = {0, 100 * 1000};
+        nanosleep(&ts, NULL);
     }
     quiet_decoder_close(dec->dec);
 
