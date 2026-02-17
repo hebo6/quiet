@@ -15,6 +15,58 @@ Build
 
 With the [dependencies](#dependencies) installed, run `./bootstrap` provided by this library, which will create a `build` directory and invoke cmake. If you would like to install it after building, do `cd build && make install`.
 
+Android Build (NDK)
+-----------
+
+Recommended approach: use the vcpkg toolchain for Android dependency resolution.
+
+```bash
+VCPKG_ROOT=/path/to/vcpkg
+
+# install dependencies once
+$VCPKG_ROOT/vcpkg install --triplet arm64-android liquid-dsp jansson libsndfile
+
+cmake -S . -B build-android/arm64-v8a \
+  -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+  -DVCPKG_TARGET_TRIPLET=arm64-android \
+  -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_PLATFORM=android-24 \
+  -DCMAKE_BUILD_TYPE=Release
+
+cmake --build build-android/arm64-v8a
+```
+
+Notes:
+* Dependencies are resolved from the selected vcpkg triplet (for example `arm64-android`).
+* Android builds produce `libquiet` and, when dependencies are found, the corresponding programs.
+* Test targets exist but are not built unless explicitly requested.
+
+To build Android executable programs:
+* File-based programs (`quiet_encode_file`, `quiet_decode_file`) require Android `libsndfile`.
+* Soundcard programs (`quiet_encode_soundcard`, `quiet_decode_soundcard`) require Android `portaudio`.
+
+```bash
+cmake -S . -B build-android/arm64-v8a \
+  -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+  -DVCPKG_TARGET_TRIPLET=arm64-android \
+  -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_PLATFORM=android-24 \
+  -DCMAKE_BUILD_TYPE=Release
+
+cmake --build build-android/arm64-v8a
+```
+
+Optional soundcard programs:
+
+```bash
+cmake -S . -B build-android/arm64-v8a \
+  ... \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_PLATFORM=android-24
+```
+
 Profiles
 -----------
 The encoding and decoding processes are controlled by the profiles in `quiet-profiles.json`. Each profile contains a complete set of parameters such as modem type and error correction.

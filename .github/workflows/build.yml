@@ -55,11 +55,153 @@ jobs:
           name: quiet-linux-x86_64
           path: dist/
 
+  build-android:
+    runs-on: ubuntu-latest
+    env:
+      ABI: arm64-v8a
+      API: "24"
+      VCPKG_DEFAULT_TRIPLET: arm64-android
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Android NDK
+        id: android-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+
+      - name: Install host build dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake ninja-build pkg-config git zip unzip curl tar
+
+      - name: Setup vcpkg
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git third_party/vcpkg
+          ./third_party/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+      - name: Patch liquid-dsp vcpkg port for Android cross-compile
+        run: |
+          set -euxo pipefail
+          PORTFILE="third_party/vcpkg/ports/liquid-dsp/portfile.cmake"
+
+          if ! grep -q "C_HAS_NEON_1_EXITCODE" "$PORTFILE"; then
+            awk '
+              BEGIN { in_call=0; inserted=0 }
+              /vcpkg_cmake_configure\(/ && !inserted { in_call=1 }
+              {
+                if (in_call && $0 ~ /^[[:space:]]*\)[[:space:]]*$/ && !inserted) {
+                  print "    OPTIONS"
+                  print "      -DC_HAS_NEON_1_EXITCODE=0"
+                  print "      -DCXX_HAS_NEON_1_EXITCODE=0"
+                  inserted=1
+                  in_call=0
+                }
+                print
+              }
+              END {
+                if (!inserted) {
+                  exit 2
+                }
+              }
+            ' "$PORTFILE" > "$PORTFILE.tmp"
+            mv "$PORTFILE.tmp" "$PORTFILE"
+          fi
+
+          grep -n "vcpkg_cmake_configure\\|C_HAS_NEON_1_EXITCODE\\|CXX_HAS_NEON_1_EXITCODE" "$PORTFILE" | tail -n 20
+
+      - name: Patch portaudio vcpkg port to disable JACK on Android
+        run: |
+          set -euxo pipefail
+          PORTFILE="third_party/vcpkg/ports/portaudio/portfile.cmake"
+
+          sed -i \
+            -e 's/-DPA_USE_JACK=ON/-DPA_USE_JACK=OFF/' \
+            -e 's/-DCMAKE_REQUIRE_FIND_PACKAGE_Jack=ON/-DCMAKE_REQUIRE_FIND_PACKAGE_Jack=OFF/' \
+            "$PORTFILE"
+
+          grep -n "PA_USE_JACK\\|CMAKE_REQUIRE_FIND_PACKAGE_Jack" "$PORTFILE"
+
+      - name: Install Android dependencies from vcpkg
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/third_party/vcpkg
+          ANDROID_NDK_ROOT: ${{ steps.android-ndk.outputs.ndk-path }}
+          ANDROID_NDK_HOME: ${{ steps.android-ndk.outputs.ndk-path }}
+        run: |
+          set -euxo pipefail
+          "$VCPKG_ROOT/vcpkg" install --triplet "$VCPKG_DEFAULT_TRIPLET" --allow-unsupported \
+            liquid-dsp \
+            jansson \
+            "libsndfile[core,external-libs]" \
+            portaudio
+
+      - name: Build Quiet Android libraries and file programs
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/third_party/vcpkg
+          ANDROID_NDK_ROOT: ${{ steps.android-ndk.outputs.ndk-path }}
+          ANDROID_NDK_HOME: ${{ steps.android-ndk.outputs.ndk-path }}
+        run: |
+          set -euxo pipefail
+
+          cmake -S . -B "build-android/$ABI" \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_TARGET_TRIPLET="$VCPKG_DEFAULT_TRIPLET" \
+            -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake" \
+            -DANDROID_ABI="$ABI" \
+            -DANDROID_PLATFORM="android-$API" \
+            -DCMAKE_BUILD_TYPE=Release
+
+          cmake --build "build-android/$ABI"
+
+          cmake --install "build-android/$ABI" --prefix "$PWD/dist/android/$ABI"
+
+      - name: Bundle Android shared libraries
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/third_party/vcpkg
+        run: |
+          set -euxo pipefail
+
+          DIST_DIR="$PWD/dist/android/$ABI"
+          LIB_DIR="$DIST_DIR/lib"
+          VCPKG_INSTALLED_DIR="${VCPKG_ROOT}/installed/${VCPKG_DEFAULT_TRIPLET}"
+          VCPKG_LIB_DIR="${VCPKG_INSTALLED_DIR}/lib"
+
+          mkdir -p "$LIB_DIR"
+
+          bundle_deps() {
+            local bin="$1"
+            local needed
+            needed=$(readelf -d "$bin" | awk '/NEEDED/ {gsub(/\[|\]/,"",$5); print $5}')
+            for so in $needed; do
+              local src=""
+              if [ -f "$VCPKG_LIB_DIR/$so" ]; then
+                src="$VCPKG_LIB_DIR/$so"
+              fi
+              if [ -n "$src" ] && [ ! -f "$LIB_DIR/$(basename "$src")" ]; then
+                cp "$src" "$LIB_DIR/"
+                bundle_deps "$src"
+              fi
+            done
+          }
+
+          for bin in "$DIST_DIR/bin/"*; do
+            [ -f "$bin" ] || continue
+            bundle_deps "$bin"
+          done
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: quiet-android-arm64-v8a
+          path: dist/android/arm64-v8a/
+
   release:
     runs-on: ubuntu-latest
     if: github.ref_type == 'tag'
     needs:
       - build-linux_x64
+      - build-android
     steps:
       - name: Download packages
         uses: actions/download-artifact@v4
