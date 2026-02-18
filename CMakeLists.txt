@@ -4,8 +4,9 @@ include(CheckLibraryExists)
 include(CheckIncludeFiles)
 include(CheckCCompilerFlag)
 
-set(QUIET_PROFILES_LOCATION "${CMAKE_INSTALL_PREFIX}/share/quiet/")
-add_definitions(-DQUIET_PROFILES_LOCATION="${QUIET_PROFILES_LOCATION}quiet-profiles.json")
+set(QUIET_PROFILES_RELATIVE_DIR "share/quiet")
+set(QUIET_PROFILES_LOCATION "${CMAKE_INSTALL_PREFIX}/${QUIET_PROFILES_RELATIVE_DIR}/quiet-profiles.json")
+add_definitions(-DQUIET_PROFILES_LOCATION="${QUIET_PROFILES_LOCATION}")
 
 if (CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -181,7 +182,7 @@ endif()
 
 add_custom_target(programs DEPENDS ${buildable_programs})
 
-install(FILES ${CMAKE_BINARY_DIR}/share/quiet-profiles.json DESTINATION ${QUIET_PROFILES_LOCATION})
+install(FILES ${CMAKE_BINARY_DIR}/share/quiet-profiles.json DESTINATION ${QUIET_PROFILES_RELATIVE_DIR})
 install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include)
 install(TARGETS ${buildable_programs}
                 quiet quiet_static
