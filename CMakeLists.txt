@@ -138,20 +138,25 @@ add_custom_target(quiet-profiles ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SO
 
 set(buildable_programs "")
 
-find_path(sndfile_include NAMES sndfile.h)
-find_library(sndfile_library NAMES sndfile)
-find_package_handle_standard_args(Sndfile DEFAULT_MSG sndfile_library sndfile_include)
-mark_as_advanced(sndfile_include sndfile_library)
-if (SNDFILE_FOUND)
-    add_library(sndfile UNKNOWN IMPORTED)
-    set_target_properties(sndfile PROPERTIES IMPORTED_LOCATION "${sndfile_library}" INTERFACE_INCLUDE_DIRECTORIES "${sndfile_include}")
-
+find_package(SndFile QUIET)
+if (NOT SndFile_FOUND)
+    find_path(sndfile_include NAMES sndfile.h)
+    find_library(sndfile_library NAMES sndfile)
+    if (sndfile_include AND sndfile_library)
+        add_library(SndFile::sndfile UNKNOWN IMPORTED)
+        set_target_properties(SndFile::sndfile PROPERTIES
+            IMPORTED_LOCATION "${sndfile_library}"
+            INTERFACE_INCLUDE_DIRECTORIES "${sndfile_include}")
+        set(SndFile_FOUND TRUE)
+    endif()
+endif()
+if (SndFile_FOUND)
     add_executable(quiet_encode_file programs/encode_file.c)
-    target_link_libraries(quiet_encode_file quiet_static sndfile ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(quiet_encode_file quiet_static SndFile::sndfile ${CMAKE_THREAD_LIBS_INIT})
     set(buildable_programs ${buildable_programs} quiet_encode_file)
 
     add_executable(quiet_decode_file programs/decode_file.c)
-    target_link_libraries(quiet_decode_file quiet_static sndfile ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(quiet_decode_file quiet_static SndFile::sndfile ${CMAKE_THREAD_LIBS_INIT})
     set(buildable_programs ${buildable_programs} quiet_decode_file)
 else()
     unset(SNDFILE CACHE)
