@@ -19,11 +19,22 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
     }
 
     PaDeviceIndex device = Pa_GetDefaultInputDevice();
+    if (device == paNoDevice) {
+        printf("no default input device found\n");
+        return 1;
+    }
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
+    if (!deviceInfo) {
+        printf("failed to get device info\n");
+        return 1;
+    }
     double sample_rate = deviceInfo->defaultSampleRate;
     PaTime latency = deviceInfo->defaultLowInputLatency;
 
     decoder = quiet_portaudio_decoder_create(opt, device, latency, sample_rate);
+    if (!decoder) {
+        return 1;
+    }
     quiet_portaudio_decoder_set_blocking(decoder, 0, 0);
 
     size_t write_buffer_size = 16384;
