@@ -10,7 +10,7 @@
 
 float freq2rad(float freq) { return freq * 2 * M_PI; }
 
-SNDFILE *wav_open(const char *fname, unsigned int *sample_rate) {
+static SNDFILE *open_wav_for_read(const char *fname, unsigned int *sample_rate) {
     SF_INFO sfinfo;
 
     memset(&sfinfo, 0, sizeof(sfinfo));
@@ -22,11 +22,11 @@ SNDFILE *wav_open(const char *fname, unsigned int *sample_rate) {
     return f;
 }
 
-size_t wav_read(SNDFILE *wav, float *samples, size_t sample_len) {
+static size_t read_wav_samples(SNDFILE *wav, float *samples, size_t sample_len) {
     return sf_read_float(wav, samples, sample_len);
 }
 
-void wav_close(SNDFILE *wav) { sf_close(wav); }
+static void close_wav(SNDFILE *wav) { sf_close(wav); }
 
 void recv_all(quiet_decoder *d, uint8_t *buf,
               size_t bufsize, FILE *payload) {
@@ -42,7 +42,7 @@ void recv_all(quiet_decoder *d, uint8_t *buf,
 int decode_wav(FILE *payload, const char *wav_fname,
                quiet_decoder_options *opt) {
     unsigned int sample_rate;
-    SNDFILE *wav = wav_open(wav_fname, &sample_rate);
+    SNDFILE *wav = open_wav_for_read(wav_fname, &sample_rate);
 
     if (wav == NULL) {
         printf("failed to open wav file for reading\n");
@@ -59,7 +59,7 @@ int decode_wav(FILE *payload, const char *wav_fname,
     size_t bufsize = 1 << 13;
     uint8_t *buf = malloc(bufsize);
     while (!done) {
-        size_t nread = wav_read(wav, samplebuf, wantread);
+        size_t nread = read_wav_samples(wav, samplebuf, wantread);
 
         if (nread == 0) {
             break;
@@ -77,7 +77,7 @@ int decode_wav(FILE *payload, const char *wav_fname,
     free(samplebuf);
     free(buf);
     quiet_decoder_destroy(d);
-    wav_close(wav);
+    close_wav(wav);
     return 0;
 }
 
