@@ -2,6 +2,10 @@
 
 portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *opt, PaDeviceIndex device, PaTime latency, double sample_rate, size_t sample_buffer_size) {
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
+    if (!deviceInfo) {
+        printf("failed to get device info\n");
+        return NULL;
+    }
     size_t num_channels = 2 < deviceInfo->maxOutputChannels ? 2 : deviceInfo->maxOutputChannels;
     PaStreamParameters param = {
         .device = device,

@@ -107,6 +107,10 @@ static void *consume(void *dec_void) {
 portaudio_decoder *quiet_portaudio_decoder_create(const decoder_options *opt, PaDeviceIndex device,
                                                   PaTime latency, double sample_rate) {
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
+    if (!deviceInfo) {
+        printf("failed to get device info\n");
+        return NULL;
+    }
     size_t num_channels = 2 < deviceInfo->maxInputChannels ? 2 : deviceInfo->maxInputChannels;
     PaStreamParameters param = {
         .device = device,
