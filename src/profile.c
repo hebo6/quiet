@@ -1,5 +1,34 @@
 #include "quiet/common.h"
 #include <jansson.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifndef DEFAULT_PROFILES_DIR
+#define DEFAULT_PROFILES_DIR "/usr/local/share/quiet"
+#endif
+
+static const char *get_default_profile_path(const char *cli_arg_path, char *buf, size_t buf_size) {
+    if (cli_arg_path != NULL) {
+        return cli_arg_path;
+    }
+
+    const char *env_path = getenv("QUIET_PROFILES_PATH");
+    if (env_path != NULL && access(env_path, R_OK) == 0) {
+        return env_path;
+    }
+
+    const char *home = getenv("HOME");
+    if (home != NULL) {
+        snprintf(buf, buf_size, "%s/.config/quiet/quiet-profiles.json", home);
+        if (access(buf, R_OK) == 0) {
+            return buf;
+        }
+    }
+
+    snprintf(buf, buf_size, "%s/quiet-profiles.json", DEFAULT_PROFILES_DIR);
+    return buf;
+}
 
 encoder_options *encoder_profile(json_t *root, const char *profilename) {
     json_t *profile = json_object_get(root, profilename);
@@ -163,8 +192,11 @@ encoder_options *quiet_encoder_profile_file(FILE *f, const char *profilename) {
 
 encoder_options *quiet_encoder_profile_filename(const char *fname,
                                                 const char *profilename) {
+    char path_buf[512];
+    const char *actual_fname = get_default_profile_path(fname, path_buf, sizeof(path_buf));
+
     json_error_t error;
-    json_t *root = json_load_file(fname, 0, &error);
+    json_t *root = json_load_file(actual_fname, 0, &error);
 
     if (!root) {
         quiet_set_last_error(quiet_profile_malformed_json);
@@ -323,8 +355,11 @@ decoder_options *quiet_decoder_profile_file(FILE *f, const char *profilename) {
 
 decoder_options *quiet_decoder_profile_filename(const char *fname,
                                                 const char *profilename) {
+    char path_buf[512];
+    const char *actual_fname = get_default_profile_path(fname, path_buf, sizeof(path_buf));
+
     json_error_t error;
-    json_t *root = json_load_file(fname, 0, &error);
+    json_t *root = json_load_file(actual_fname, 0, &error);
 
     if (!root) {
         quiet_set_last_error(quiet_profile_malformed_json);
@@ -385,9 +420,12 @@ char **quiet_profile_keys_file(FILE *f, size_t *size) {
     return keys;
 }
 
-char **quiet_profile_keys_filename(const char *filename, size_t *size) {
+char **quiet_profile_keys_filename(const char *fname, size_t *size) {
+    char path_buf[512];
+    const char *actual_fname = get_default_profile_path(fname, path_buf, sizeof(path_buf));
+
     json_error_t error;
-    json_t *root = json_load_file(filename, 0, &error);
+    json_t *root = json_load_file(actual_fname, 0, &error);
 
     if (!root) {
         quiet_set_last_error(quiet_profile_malformed_json);

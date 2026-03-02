@@ -588,6 +588,11 @@ quiet_decoder_options *quiet_decoder_profile_file(FILE *f,
  * from the file located at filename and returns the corresponding
  * quiet_decoder_options.
  *
+ * If fname is NULL, the function will attempt to find a valid profile file using a fallback chain:
+ * 1. QUIET_PROFILES_PATH environment variable
+ * 2. ~/.config/quiet/quiet-profiles.json
+ * 3. /usr/local/share/quiet/quiet-profiles.json
+ *
  * @return a pointer to an initialized quiet_decoder_options or NULL if
  *  decoding failed. must be freed by caller (with free()).
  */
@@ -631,6 +636,11 @@ quiet_encoder_options *quiet_encoder_profile_file(FILE *f,
  * quiet_encoder_profile_filename reads the profile given by profilename
  * from the file located at filename and returns the corresponding
  * quiet_encoder_options.
+ *
+ * If fname is NULL, the function will attempt to find a valid profile file using a fallback chain:
+ * 1. QUIET_PROFILES_PATH environment variable
+ * 2. ~/.config/quiet/quiet-profiles.json
+ * 3. /usr/local/share/quiet/quiet-profiles.json
  *
  * @return a pointer to an initialized quiet_encoder_options or NULL if
  *  decoding failed. must be freed by caller (with free()).
@@ -676,6 +686,11 @@ char **quiet_profile_keys_file(FILE *f, size_t *numkeys);
  * quiet_profile_keys_filename reads the JSON file found at fname and fetches
  * the keys from the top-level dictionary. It does not perform validation on
  * the profiles themselves, which could be invalid.
+ *
+ * If fname is NULL, the function will attempt to find a valid profile file using a fallback chain:
+ * 1. QUIET_PROFILES_PATH environment variable
+ * 2. ~/.config/quiet/quiet-profiles.json
+ * 3. /usr/local/share/quiet/quiet-profiles.json
  *
  * @return an array of strings with key names or NULL if JSON parsing failed.
  *  must be freed by caller (with free()). the length of this array will be

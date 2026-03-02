@@ -54,26 +54,48 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
 }
 
 int main(int argc, char **argv) {
-    if (argc < 2 || argc > 4) {
-        printf("usage: encode_soundcard <profilename> [<output_destination>]\n");
+    const char *profilename = NULL;
+    const char *output_dest = NULL;
+    const char *conf_path = NULL;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--conf") == 0) {
+            if (i + 1 >= argc) {
+                printf("--conf requires an argument\n");
+                exit(1);
+            }
+            conf_path = argv[++i];
+        } else if (strcmp(argv[i], "--help") == 0) {
+            printf("usage: %s <profilename> [<output_destination>] [--conf <path>]\n", argv[0]);
+            exit(0);
+        } else if (!profilename) {
+            profilename = argv[i];
+        } else if (!output_dest) {
+            output_dest = argv[i];
+        }
+    }
+
+    if (!profilename) {
+        printf("usage: %s <profilename> [<output_destination>] [--conf <path>]\n", argv[0]);
         exit(1);
     }
+
     quiet_decoder_options *decodeopt =
-        quiet_decoder_profile_filename(QUIET_PROFILES_LOCATION, argv[1]);
+        quiet_decoder_profile_filename(conf_path, profilename);
 
     if (!decodeopt) {
-        printf("failed to read profile %s from %s\n", argv[1], QUIET_PROFILES_LOCATION);
+        printf("failed to read profile %s\n", profilename);
         exit(1);
     }
 
     FILE *output;
-    if ((argc == 2) || strncmp(argv[2], "-", 2) == 0) {
+    if (!output_dest || strncmp(output_dest, "-", 2) == 0) {
         output = stdout;
         setvbuf(stdout, NULL, _IONBF, 0);  // in order to get interactive let's make stdout unbuffered
     } else {
-        output = fopen(argv[2], "wb");
+        output = fopen(output_dest, "wb");
         if (!output) {
-            fprintf(stderr, "failed to open %s: ", argv[2]);
+            fprintf(stderr, "failed to open %s: ", output_dest);
             perror(NULL);
             exit(1);
         }

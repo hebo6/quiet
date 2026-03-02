@@ -62,25 +62,47 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
 }
 
 int main(int argc, char **argv) {
-    if (argc < 2 || argc > 4) {
-        printf("usage: encode_soundcard <profilename> [<input_source>]\n");
+    const char *profilename = NULL;
+    const char *input_source = NULL;
+    const char *conf_path = NULL;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--conf") == 0) {
+            if (i + 1 >= argc) {
+                printf("--conf requires an argument\n");
+                exit(1);
+            }
+            conf_path = argv[++i];
+        } else if (strcmp(argv[i], "--help") == 0) {
+            printf("usage: %s <profilename> [<input_source>] [--conf <path>]\n", argv[0]);
+            exit(0);
+        } else if (!profilename) {
+            profilename = argv[i];
+        } else if (!input_source) {
+            input_source = argv[i];
+        }
+    }
+
+    if (!profilename) {
+        printf("usage: %s <profilename> [<input_source>] [--conf <path>]\n", argv[0]);
         exit(1);
     }
+
     quiet_encoder_options *encodeopt =
-        quiet_encoder_profile_filename(QUIET_PROFILES_LOCATION, argv[1]);
+        quiet_encoder_profile_filename(conf_path, profilename);
 
     if (!encodeopt) {
-        printf("failed to read profile %s from %s\n", argv[1], QUIET_PROFILES_LOCATION);
+        printf("failed to read profile %s\n", profilename);
         exit(1);
     }
 
     FILE *input;
-    if ((argc == 2) || strncmp(argv[2], "-", 2) == 0) {
+    if (!input_source || strncmp(input_source, "-", 2) == 0) {
         input = stdin;
     } else {
-        input = fopen(argv[2], "rb");
+        input = fopen(input_source, "rb");
         if (!input) {
-            fprintf(stderr, "failed to open %s: ", argv[2]);
+            fprintf(stderr, "failed to open %s: ", input_source);
             perror(NULL);
             exit(1);
         }
