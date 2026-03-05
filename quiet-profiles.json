@@ -4,7 +4,7 @@
         "inner_fec_scheme": "g2412",
         "outer_fec_scheme": "none",
         "mod_scheme": "gmsk",
-        "frame_length": 25,
+        "frame_length": 250,
         "modulation": {
             "center_frequency": 4200,
             "gain": 0.15
