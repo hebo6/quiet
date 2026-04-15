@@ -23,7 +23,17 @@ static inline void resamp_rrrf_execute_output_block(
     float rate = resamp_rrrf_get_rate(_q);
     unsigned int worst = (unsigned int)ceilf(rate) + 1;
 
-    while (rd < _nx && wr + worst <= _ny_max) {
+    while (rd < _nx && wr < _ny_max) {
+        if (wr + worst > _ny_max) {
+            float tmp[worst];
+            unsigned int nw;
+            resamp_rrrf_execute(_q, _x[rd], tmp, &nw);
+            rd++;
+            unsigned int copy = (_ny_max - wr < nw) ? _ny_max - wr : nw;
+            memcpy(_y + wr, tmp, copy * sizeof(float));
+            wr += copy;
+            break;
+        }
         unsigned int nw;
         resamp_rrrf_execute(_q, _x[rd], _y + wr, &nw);
         rd++;
