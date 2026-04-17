@@ -198,7 +198,6 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    if: github.ref_type == 'tag'
     needs:
       - build-linux_x64
       - build-android
@@ -213,5 +212,7 @@ jobs:
       - name: release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'nightly' }}
           files: "*.zip"
           fail_on_unmatched_files: true
+          make_latest: "true"
